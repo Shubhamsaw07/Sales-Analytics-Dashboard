@@ -1,0 +1,197 @@
+use data_cleaning;
+-- Total Sales Matrix
+select  count(*) As total_transactions,
+		sum(quantity_sold) As total_quantity_sold,
+		round(sum(total_amount),2) As total_revenue,
+		round(avg(total_amount),2) as avg_total_revenue
+from fact_sales;
+
+-- Finding the missmatch Row in table
+
+ select * from dim_date;
+select 
+	count(*) As mismatched_rows
+from fact_sales
+where ABS(total_amount - ((quantity_sold * unit_price) - discount )) > 0.01;
+
+-- sales by yearly , monthly
+select d.month,d.year,
+sum(f.quantity_sold) as total_quantity,
+round(sum(f.total_amount),2) as total_amount
+from fact_sales f
+join dim_date d
+on f.date_key = d.date_key
+group by  d.year, d.month, d.month_name
+order by d.year, d.month ;
+
+-- sales by weekdays vs weekend 
+SELECT 
+    CASE
+        WHEN d.is_weekend = 1 THEN 'weekend'
+        ELSE 'weekdays'
+    END AS day_type,
+    ROUND(SUM(f.total_amount), 2) AS total_revenue
+FROM
+    fact_sales f
+        JOIN
+    dim_date d ON f.date_key = d.date_key
+GROUP BY is_weekend
+ORDER BY total_revenue DESC;
+
+
+-- Top revenue by customers 
+ select * from fact_sales
+ order by customer_key;
+ select * from dim_customer;
+
+select c.customer_id,
+concat(c.first_name,' ' , c.last_name) as full_name,
+c.country,
+round(sum(f.total_amount),2) as total_spend
+from dim_customer c
+join fact_sales f 
+on c.customer_key = f.customer_key 
+group by c.customer_id,c.country, full_name
+order by total_spend desc
+limit 10;
+
+-- Gender Based analyze
+select c.gender,
+count(distinct c.customer_id) As customer_count,
+round(sum(f.total_amount),2) as total_revenue,
+round(avg(f.total_amount),2) as Avg_revenue
+from dim_customer c 
+join fact_sales f
+on c.customer_key = f.customer_key
+group by c.gender
+order by total_revenue desc; 
+
+select count(*) 
+from dim_customer ;
+
+-- Top selling product 
+ 
+select * from dim_product;
+select * from fact_sales;
+select *,
+concat(
+round((discount/unit_price) * 100,2),'%')as discount_percentage
+from fact_sales;
+
+select p.product_id, p.product_name, p.category,
+sum(f.quantity_sold) as total_units,
+round(sum(f.unit_price),2) as revenue
+from fact_sales f
+join  dim_product p
+on f.product_key = p.product_key
+group by p.product_id, p.product_name, p.category
+order by revenue desc
+limit 10;
+
+-- category wise revenue 
+select p.category,
+round(sum(f.total_amount),2) as total_sales,
+ROUND(SUM(f.total_amount)*100.0 / SUM(SUM(f.total_amount)) OVER (), 2) AS percent_share
+from dim_product p
+join fact_sales f       
+on p.product_key = f.product_key
+group by p.category
+order by total_sales desc
+limit 10;
+ 
+-- Revenue By region 
+select * from dim_store; 
+select * from fact_sales;
+
+select s.region, 
+round(sum(f.total_amount),2) As total_revenue
+from dim_store s
+join fact_sales f
+on s.store_key = f.store_key
+group by s.region
+order by total_revenue desc;
+
+-- City level breakdown 
+select  s.city,
+round(sum(f.total_amount),2) As city_revenue
+from dim_store s
+join fact_sales f
+on s.store_key = f.store_key
+group by s.city
+order by city_revenue desc
+limit 10;
+
+-- How much impact based on discount 
+select 
+case 
+when discount = 0 then 'NO discount' 
+when discount <= 10 then 'low discount'
+when discount <= 30 then 'medium discount'
+else 
+'High Discount'
+end as discount_range,
+count(*) as total_transaction,
+round(sum(total_amount),2) as total_revenue,
+round(avg(total_amount),2) as avg_revenue
+from fact_sales 
+group by discount_range
+order by total_revenue desc;
+
+
+create or replace view vw_sales_summary AS
+select
+d.year,
+d.quarter,
+d.month,
+d.month_name,
+p.category,
+p.brand,
+s.region,
+s.country,
+count(f.sales_id) AS transactions,
+count(distinct f.customer_key) AS unique_customers,
+count(distinct f.product_key) AS unique_products,
+count(distinct f.store_key)  AS unique_stores,
+sum(f.quantity_sold) AS total_units,
+round(sum(f.total_amount), 2) AS total_sales,
+-- average metrics
+round(avg(f.total_amount), 2) AS avg_order_value,
+round(avg(f.unit_price), 2)AS avg_unit_price,
+-- avg discount % on line value: discount / (qty * unit_price)
+round(avg(
+case
+when f.quantity_sold * f.unit_price > 0 
+then(f.discount / (f.quantity_sold * f.unit_price)) * 100
+else null
+end),2) AS avg_discount_pct,
+    
+-- weekend contribution
+round(sum(case when d.is_weekend = 1 then f.total_amount else 0 end), 2) AS weekend_sales,
+round(sum(case when d.is_weekend = 0 then f.total_amount else 0 end), 2) AS weekday_sales,
+round(sum(case when d.is_weekend = 1 then f.total_amount else 0 end) * 100.0 / nullif(sum(f.total_amount), 0),2) AS weekend_sales_pct
+from fact_sales f
+join dim_date d on f.date_key = d.date_key
+join dim_product p on f.product_key = p.product_key
+join dim_store   s on f.store_key   = s.store_key
+group by d.year,
+d.quarter,
+d.month,
+d.month_name,
+p.category,
+p.brand,
+s.region,
+s.country;
+
+GRANT ALL PRIVILEGES ON *.* TO 'shubham'@'%' IDENTIFIED BY 'Adarsh400' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+CREATE USER 'shubham'@'%' IDENTIFIED BY 'Adarsh400';
+
+GRANT ALL PRIVILEGES ON *.* TO 'shubham'@'%' WITH GRANT OPTION;
+SELECT user, host FROM mysql.user;
+
+
+
+
+
+
