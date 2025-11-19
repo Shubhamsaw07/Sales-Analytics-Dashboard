@@ -1,0 +1,26 @@
+select * from dim_customer;
+select * from dim_date;
+select * from dim_product;
+select * from dim_store;
+select * from fact_sales;
+
+create table stg_dim_customer as
+select * from dim_customer;
+
+create table stg_dim_date as
+select * from dim_date;
+
+create table stg_dim_product as
+select * from dim_product;
+
+create table stg_dim_store as
+select * from dim_store;
+
+create table stg_fact_sales as
+select * from fact_sales;
+
+INSERT INTO stg_dim_customer VALUES (342, 'CUST0342', 'Amanda', 'Velazquez', 'F', 'christopherbenjamin@example.com', '001231914312167', 'Kiribati', 'Hawaii', 'West Maryville', '2025-04-30');
+delete from stg_dim_customer
+where first_name = 'Amanda';
+
+SET SQL_SAFE_UPDATES = 0;
