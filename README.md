@@ -7,7 +7,7 @@ The goal is to understand sales performance across **time, products, customers, 
 
 ---
 
-## **Project Architecture**
+## Project Architecture
 
 ### **Database: MySQL**
 
@@ -19,7 +19,7 @@ Structured using a **Star Schema**:
 * **dim_product**
 * **dim_store**
 
-## **1. SQL Exploratory Data Analysis (EDA)**
+## 1. SQL Exploratory Data Analysis (EDA)**
 
 
 ###  Data Cleaning
@@ -43,14 +43,14 @@ Created `vw_sales_summary` to accelerate Power BI reporting.
 
 ## **2. Power BI Dashboard (5 Pages)**
 
-### ** Page 1 — Executive Sales Overview**
+### Page 1 — Executive Sales Overview
 
 * Total Sales, Units, Orders, AOV
 * Monthly trend
 * Sales by Category, Region, Gender
 * Top 10 Products
 
-### ** Page 2 — Product Performance Insights**
+###  Page 2 — Product Performance Insights
 
 * Category & brand performance
 * Discount vs Sales (Scatter)
